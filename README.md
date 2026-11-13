@@ -1,2 +1,2 @@
-This project aims to provide a simple, .net native tool that can run uploaded images 
-through a baseline cleanup pipeline aimed at improving OCR results. 
+This project aims to provide a simple tool to cleanup tiff images before being OCr'd
+allowing you to test the impact on OCR performance. 
