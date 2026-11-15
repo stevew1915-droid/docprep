@@ -117,13 +117,15 @@ Observations
 SUMMMARY
 
 The overall performance difference between ImageSharp vs the orginal C++ 
-Libtiff + leptonia libraries (and included dependencies) was not significant. 
-ImageSharp.Web adds caching and reduced thumbnail generation time by 140 ms 
-(160 vs 20). Apart from deskew, all image conversions were pixel for pixel 
-identical and all tests completed. For deskew, the ImageSharp port ran faster 
-but was significantly more lossy. 
+Libtiff + leptonia libraries (and included dependencies) was not significant.
+The one area that ImageSharp does not cover is PDF generation. 
 
-If you do not need built-in PDF generation, The benefit of ImageSharp, comes 
-from cross platform portability, simplified maintenance and web caching. 
+However, ImageSharp.Web adds caching and reduces thumbnail generation 
+overhead and is better isolated from rogue uploads. Apart from deskew, 
+all image conversions were pixel for pixel identical and all tests completed. 
+For deskew, the ImageSharp port ran faster but was significantly more lossy
+but that can be over-ridden. 
+
+
 
 
