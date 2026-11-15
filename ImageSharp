@@ -24,21 +24,17 @@ LibTiff and Leptonia C++ libraries were built on Windows using Visual
 Studio 2026. References here to "Leptonica" shall include Libtiff and all 
 other dependencies. 
 
-DFP is my own custom C++ wrapper that implements the above mentioned 
+DFP is my simple C++ wrapper that implements the above mentioned 
 functionality plus a number of others as well as providing web support. 
-DFP provides funcationality not invluded by legacy dependencies or 
-needed to correct some "anomalies"; For TIFF, this included handling
-stripe alignments, non-uniform pages, and bad tags, less agressive 
-despeckling and smoother deskews. Where ImageSharp provides equivalent 
-out-of-the-box functionality, it was used instead. The assumption is 
-that apps will use some high level will exist since no comparison can
-be performed against functionality that does not exist. 
-
+DFP provides funcationality not invluded by legacy dependencies or needed 
+to correct some "anomalies"; For TIFF, this included handling stripe 
+alignments, non-uniform pages, and bad tags, less agressive despeckling 
+and smoother deskews. The assumption is that apps will use some high 
+level wrapper will be needed in all cases.
 
 PERFORMANCE 
  
 Times in milliseconds:
-
 ┌──────────────────────────┬────────────┬─────────────────┬─────────┬──────────────┬───────────────────┐
 │        Operation         │ Port (Win) │ Leptonica (Win) │ DFP.dll │ Port (Linux) │ Leptonica (Linux) │
 ├──────────────────────────┼────────────┼─────────────────┼─────────┼──────────────┼───────────────────┤
@@ -69,7 +65,7 @@ Times in milliseconds:
 │ remove lines (both ways) │      11.54 │                 │   23.97 │        12.45 │                   │
 └──────────────────────────┴────────────┴─────────────────┴─────────┴──────────────┴───────────────────┘
 
-Without marshalling, every wrapper operation is 1.5 or more times faster. 
+Without marshalling, every wrapper operation was 1.5 to 5 times faster. 
 Page clean-up, line removal, and other manupulatiosn are also slightly faster.  
 ImageSharp was almost twice as fast at despeckling but had a 23% loss in content 
 pixels. DFP uses a slower but less aggressive approach. Likewise, line removal 
@@ -127,11 +123,7 @@ ImageSharp.Web adds caching and reduced thumbnail generation time by 140 ms
 identical and all tests completed. For deskew, the ImageSharp port ran faster 
 but was significantly more lossy. 
 
-The real benefit of ImageSharp, IMO, comes from cross platform portability,
-simplified maintenance and web caching. However, there's no PDF generation.
-That may be acceptable if you can loosely couple the conversion, but Zonal
-OCR functionality will be lacking but that's likely to be true even with
-most commercial products.
-
+If you do not need built-in PDF generation, The benefit of ImageSharp, comes 
+from cross platform portability, simplified maintenance and web caching. 
 
 
