@@ -1,0 +1,137 @@
+This is a Comparison of ImageSharp vs a C++ wrapper over Leptonica
+and LibTiff to build an Image cleanup component that includes: deskew, 
+decurl, black border and hole punch removal, despeckling, line removal, 
+and Otsu and Sauvola thresholds. 
+
+TLDR
+
+Using ImageSharp, all functionality was implementable and the output was 
+pixel-identical on both Windows and Linux and performed at about the same 
+speed. if you're using a NET Core and a web UI or need cross platform NET 
+Core support, ImageSharp can provide faster thumbnail generation and 
+caching but may require a license.
+
+Details
+
+For each test, roughly 2400 pages were tested in 200 dpi and 300 dpi and 
+consisted of real and synthetic pages. All tests were compiled for x64 
+(which may be slower than their x86 equivalents) and used Claude to do 
+a quick port of the wrapper, then test and time the results. 
+
+For ImageSharp, the test environment was Ubuntu 26.04 and NET 11.
+
+LibTiff and Leptonia C++ libraries were built on Windows using Visual 
+Studio 2026. References here to "Leptonica" shall include Libtiff and all 
+other dependencies. 
+
+DFP is my own custom C++ wrapper that implements the above mentioned 
+functionality plus a number of others as well as providing web support. 
+DFP provides funcationality not invluded by legacy dependencies or 
+needed to correct some "anomalies"; For TIFF, this included handling
+stripe alignments, non-uniform pages, and bad tags, less agressive 
+despeckling and smoother deskews. Where ImageSharp provides equivalent 
+out-of-the-box functionality, it was used instead. The assumption is 
+that apps will use some high level will exist since no comparison can
+be performed against functionality that does not exist. 
+
+
+PERFORMANCE 
+ 
+Times in milliseconds:
+
+┌──────────────────────────┬────────────┬─────────────────┬─────────┬──────────────┬───────────────────┐
+│        Operation         │ Port (Win) │ Leptonica (Win) │ DFP.dll │ Port (Linux) │ Leptonica (Linux) │
+├──────────────────────────┼────────────┼─────────────────┼─────────┼──────────────┼───────────────────┤
+│ open 10×10               │       3.30 │            2.83 │         │         3.24 │              3.47 │
+├──────────────────────────┼────────────┼─────────────────┼─────────┼──────────────┼───────────────────┤
+│ open 40×1                │       4.36 │            9.88 │         │         3.94 │             11.23 │
+├──────────────────────────┼────────────┼─────────────────┼─────────┼──────────────┼───────────────────┤
+│ close 5×1                │       1.69 │            1.21 │         │         1.74 │              1.25 │
+├──────────────────────────┼────────────┼─────────────────┼─────────┼──────────────┼───────────────────┤
+│ connected components     │       1.71 │            2.32 │         │         1.83 │              2.44 │
+├──────────────────────────┼────────────┼─────────────────┼─────────┼──────────────┼───────────────────┤
+│ select by size           │       2.31 │            4.61 │         │         2.23 │              4.28 │
+├──────────────────────────┼────────────┼─────────────────┼─────────┼──────────────┼───────────────────┤
+│ seed fill                │       1.75 │            0.62 │         │         1.80 │              0.60 │
+├──────────────────────────┼────────────┼─────────────────┼─────────┼──────────────┼───────────────────┤
+│ 4x reduction             │       0.58 │            0.11 │         │         0.23 │              0.10 │
+├──────────────────────────┼────────────┼─────────────────┼─────────┼──────────────┼───────────────────┤
+│ shear 2°                 │       0.31 │            0.13 │         │         0.28 │              0.13 │
+├──────────────────────────┼────────────┼─────────────────┼─────────┼──────────────┼───────────────────┤
+│ quarter turn             │       0.23 │            0.89 │         │         0.33 │              0.89 │
+├──────────────────────────┼────────────┼─────────────────┼─────────┼──────────────┼───────────────────┤
+│ Sauvola                  │      58.33 │           54.32 │   57.14 │        59.10 │             44.11 │
+├──────────────────────────┼────────────┼─────────────────┼─────────┼──────────────┼───────────────────┤
+│ despeckle grey           │      67.16 │                 │  112.98 │        63.62 │                   │
+├──────────────────────────┼────────────┼─────────────────┼─────────┼──────────────┼───────────────────┤
+│ clean page               │       5.16 │                 │    7.71 │         5.29 │                   │
+├──────────────────────────┼────────────┼─────────────────┼─────────┼──────────────┼───────────────────┤
+│ remove lines (both ways) │      11.54 │                 │   23.97 │        12.45 │                   │
+└──────────────────────────┴────────────┴─────────────────┴─────────┴──────────────┴───────────────────┘
+
+Without marshalling, every wrapper operation is 1.5 or more times faster. 
+Page clean-up, line removal, and other manupulatiosn are also slightly faster.  
+ImageSharp was almost twice as fast at despeckling but had a 23% loss in content 
+pixels. DFP uses a slower but less aggressive approach. Likewise, line removal 
+in DFP handles color drop which this comparison doesn't account for. 
+
+Deskew
+┌─────────────────────────────────┬──────┬───────────┬─────────┐
+│            Operation            │ Port │ Leptonica │ DFP.dll │
+├─────────────────────────────────┼──────┼───────────┼─────────┤
+│ rotate 1-bit 2° (shears)        │ 0.88 │      0.73 │         │
+├─────────────────────────────────┼──────┼───────────┼─────────┤
+│ rotate 1-bit 5° (sampling)      │ 14.6 │      12.2 │         │
+├─────────────────────────────────┼──────┼───────────┼─────────┤
+│ rotate grey 2°                  │ 22.6 │      24.6 │         │
+├─────────────────────────────────┼──────┼───────────┼─────────┤
+│ skew measure (sweep and search) │  4.0 │       2.7 │         │
+├─────────────────────────────────┼──────┼───────────┼─────────┤
+│ deskew a 1-bit page             │ 10.0 │           │    14.3 │
+├─────────────────────────────────┼──────┼───────────┼─────────┤
+│ deskew a grey page              │ 41.3 │           │    49.1 │
+└─────────────────────────────────┴──────┴───────────┴─────────┘
+
+ImageSharp and leptonica are about even (within 2 ms) for deskew. One
+thing to note is that ImageSharp rounds up the page dimensions and then 
+trucates subsequent pages to the same dimensions so additional handling
+may be required to handle the corner pixels during rotation.
+
+Decurl
+
+All dewarp comparisons are identical to Leptonica 1.86 on Linux and to 
+1.88 and DFP on Windows. DFP provides the extended functionality, but 
+ImageSharp provides a dewarp extension (not teated).
+
+Speed: dewarping a 200 dpi page takes 58–70 ms, against 51–66 ms for 
+Leptonica and DFP.
+
+Observations
+
+- ImageSharp read some 16 colour BMP images as 1 bit during deskew
+- ImageSharp padded or rounded up a 1696 × 2175 pixel page to 1700 × 2200
+  This may be intentional to avoid alignment issues later?
+- ImageSharp's TIFF decoder pads smaller pages to the first page's size 
+  and rejects any larger ones. The actual page size is still stored in 
+  the frame but you'd have to handle this in user code. 
+- ImageSharp.Web previews were 3x slower and wrote 1-bit palette PNGs 
+  and ignored the configured encoder. Setting the encoder resolves this
+  and eliminating the (DFP) worker cut thumbnail time from 160 ms to 20 ms. 
+
+SUMMMARY
+
+The overall performance difference between ImageSharp vs the orginal C++ 
+Libtiff + leptonia libraries (and included dependencies) was not significant. 
+ImageSharp.Web adds caching and reduced thumbnail generation time by 140 ms 
+(160 vs 20). Apart from deskew, all image conversions were pixel for pixel 
+identical and all tests completed. For deskew, the ImageSharp port ran faster 
+but was significantly more lossy. 
+
+The real benefit of ImageSharp, IMO, comes from cross platform portability,
+simplified maintenance and web caching. However, there's no PDF generation.
+That may be acceptable if you can loosely couple the conversion, but Zonal
+OCR functionality will be lacking but that's likely to be true even with
+most commercial products.
+
+
+
